@@ -2,7 +2,7 @@
 
 typedef void* point;
 
-int basket_size;
+extern int basket_size;
 
 int validate(point p);
 

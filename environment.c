@@ -17,7 +17,7 @@ struct environment_
 };
 
 int compare_points(const void* a, const void* b) {
-    return quality(a) - quality(b);
+    return quality(*(point*)a) - quality(*(point*)b);
 }
 
 point iteration(environment env_) {

@@ -2,6 +2,8 @@
 #include<stdlib.h>
 #include<memory.h>
 
+int basket_size = 0;
+
 struct point_
 {
     const item* items;
