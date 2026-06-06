@@ -1,16 +1,13 @@
 #include "point.h"
-#include "item.h"
 #include<stdlib.h>
 #include<memory.h>
 
 struct point_
 {
-    item* items;
+    const item* items;
     int* baskets;
     int baskets_size;
 };
-
-#define point void*
 
 int validate(point p_) {
     struct point_* p = p_;
@@ -130,11 +127,10 @@ point create_point(item* items) {
     return p;
 }
 
-point destroy_point(point p_) {
+void destroy_point(point p_) {
     struct point_* p = p_;
     free(p->baskets);
     free(p);
-    return 0;
 }
 
 point create_neighbour_point(point p_, int distance) {
@@ -168,4 +164,23 @@ point create_neighbour_point(point p_, int distance) {
     }
     free(touched);
     return q;
+}
+
+point copy_point(point p__) {
+    struct point_* p_ = p__;
+    struct point_* p = malloc(sizeof(struct point_));
+    p->items = p_->items;
+    p->baskets_size = p_->baskets_size;
+    p->baskets = malloc(p->baskets_size * sizeof(int));
+    memcpy(p->baskets, p_->baskets, p->baskets_size * sizeof(int));
+    return p_;
+}
+
+void print_point(point p_) {
+    struct point_* p = p_;
+    correct_isomorph(p);
+
+    printf("quality: %d\n", quality(p));
+    for (int i = 0; i < p->baskets_size; i++)
+        printf("item %d (volume %d) -> basket %d\n", i, p->items[i].volume, p->baskets[i]);
 }
