@@ -1,0 +1,6 @@
+*.o
+*.co
+*.d
+*.exe
+./obj
+./build

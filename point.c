@@ -10,9 +10,10 @@ struct point_
     int baskets_size;
 };
 
-#define point struct point_*
+#define point void*
 
-int validate(point p) {
+int validate(point p_) {
+    struct point_* p = p_;
     int* baskets_value;
     int max_value = -1;
 
@@ -41,7 +42,8 @@ int validate(point p) {
     return 1;
 }
 
-int quality(point p) {
+int quality(point p_) {
+    struct point_* p = p_;
     int n = p->baskets_size;
     int max_b = -1;
     for (int i = 0; i < n; i++)
@@ -58,46 +60,41 @@ int quality(point p) {
     for (int b = 0; b < bins; b++) {
         if (load[b] > basket_size) {
             free(load);
-            return 1000000;
+            return INT_MAX;
         }
     }
 
-    int* vols = malloc(bins * sizeof(int));
     int k = 0;
     for (int b = 0; b < bins; b++)
         if (load[b] > 0)
-            vols[k++] = load[b];
+            load[k++] = load[b];
 
     for (int i = 0; i < k; i++)
         for (int j = i + 1; j < k; j++)
-            if (vols[j] > vols[i]) {
-                int t = vols[i];
-                vols[i] = vols[j];
-                vols[j] = t;
+            if (load[j] > load[i]) {
+                int t = load[i];
+                load[i] = load[j];
+                load[j] = t;
             }
 
-    int* merged = malloc(k * sizeof(int));
     int merged_count = 0;
-    for (int i = 0; i < k; i++) {
-        int placed = 0;
-        for (int m = 0; m < merged_count; m++) {
-            if (merged[m] + vols[i] <= basket_size) {
-                merged[m] += vols[i];
-                placed = 1;
-                break;
+    for (int i = 0; i < k - 1; i++) {
+        for (int m = i + 1; m < k; m++) {
+            if (load[i] && load[m] && load[m] + load[i] <= basket_size) {
+                load[m] += load[i];
+                load[i] = 0;
             }
         }
-        if (!placed)
-            merged[merged_count++] = vols[i];
     }
 
+    for (int m = 0; m < k; m++) if(load[m]) merged_count++;
+
     free(load);
-    free(vols);
-    free(merged);
     return merged_count;
 }
 
-int correct_isomorph(point p) {
+int correct_isomorph(point p_) {
+    struct point_* p = p_;
     int* buffer;
     buffer = malloc(p->baskets_size * sizeof(int)); // выделение памяти массиву
 
@@ -122,7 +119,7 @@ point create_point(item* items) {
     while (items[n].volume != -1)
         n++;
 
-    point p = malloc(sizeof(struct point_));
+    struct point_* p = malloc(sizeof(struct point_));
     p->items = items;
     p->baskets_size = n;
     p->baskets = malloc(n * sizeof(int));
@@ -133,16 +130,18 @@ point create_point(item* items) {
     return p;
 }
 
-point destroy_point(point p) {
+point destroy_point(point p_) {
+    struct point_* p = p_;
     free(p->baskets);
     free(p);
     return 0;
 }
 
-point create_neighbour_point(point p, int distance) {
+point create_neighbour_point(point p_, int distance) {
+    struct point_* p = p_;
     int n = p->baskets_size;
 
-    point q = malloc(sizeof(struct point_));
+    struct point_* q = malloc(sizeof(struct point_));
     q->items = p->items;
     q->baskets_size = n;
     q->baskets = malloc(n * sizeof(int));
