@@ -93,6 +93,64 @@ int quality(point p_) {
     return merged_count;
 }
 
+int quality_print(point p_) {
+    struct point_* p = p_;
+    int n = p->baskets_size;
+    int max_b = -1;
+    for (int i = 0; i < n; i++)
+        if (p->baskets[i] > max_b)
+            max_b = p->baskets[i];
+    if (max_b < 0)
+        return 0;
+
+    int bins = max_b + 1;
+    int* load = calloc(bins, sizeof(int));
+    for (int i = 0; i < n; i++)
+        load[p->baskets[i]] += p->items[i].volume;
+
+    for (int b = 0; b < bins; b++) {
+        if (load[b] > basket_size) {
+            free(load);
+            return INT_MAX;
+        }
+    }
+
+    int k = 0;
+    for (int b = 0; b < bins; b++)
+        if (load[b] > 0){
+            load[k] = load[b];
+            for (int j = 0; j < n; j++) if(p->baskets[j] == b) p->baskets[j] = k;
+            k++;
+        }
+
+    for (int i = 0; i < k; i++)
+        for (int j = i + 1; j < k; j++)
+            if (load[j] > load[i]) {
+                int t = load[i];
+                load[i] = load[j];
+                load[j] = t;
+                for (int h = 0; h < n; h++) if(p->baskets[h] == i) p->baskets[h] = -6;
+                for (int h = 0; h < n; h++) if(p->baskets[h] == j) p->baskets[h] = i;
+                for (int h = 0; h < n; h++) if(p->baskets[h] == -6) p->baskets[h] = j;
+            }
+
+    int merged_count = 0;
+    for (int i = 0; i < k - 1; i++) {
+        for (int m = i + 1; m < k; m++) {
+            if (load[i] && load[m] && load[m] + load[i] <= basket_size) {
+                load[m] += load[i];
+                load[i] = 0;
+                for (int j = 0; j < n; j++) if(p->baskets[j] == i) p->baskets[j] = m;
+            }
+        }
+    }
+
+    for (int m = 0; m < k; m++) if(load[m]) merged_count++;
+
+    free(load);
+    return merged_count;
+}
+
 void correct_isomorph(point p_) {
     struct point_* p = p_;
     int* buffer;
@@ -250,8 +308,47 @@ void print_point(point p_) {
     struct point_* p = p_;
     correct_isomorph(p);
 
-    for (int i = 0; i < p->baskets_size; i++)
-        printf("item %d (volume %d) -> basket %d\n", i, p->items[i].volume, p->baskets[i]);
+    int n_view = 30;
+    int n = p->baskets_size;
 
-    printf("quality: %d\n", quality(p));
+    int max_b = -1;
+    for (int i = 0; i < n; i++)
+        if (p->baskets[i] > max_b)
+            max_b = p->baskets[i];
+    if (max_b < 0)
+        return 0;
+    max_b++;
+
+    int* load = calloc(max_b, sizeof(int));
+    int it = 0;
+    
+    for (int i = 0; i < n; i++)
+        load[p->baskets[i]] += p->items[i].volume;
+
+    printf("quality: %d\n", quality_print(p));
+
+    for (int i = 0; i < max_b; i++)
+        load[i] = 0;
+    for (int i = 0; i < n; i++)
+        load[p->baskets[i]] += p->items[i].volume;
+
+    int itb = 1;
+    for (int i = 0; i < max_b; i++){
+        if(load[i] == 0) continue;
+        printf("basket %3d [", itb);
+        int m_view = n_view * load[i] / basket_size;
+        if(m_view == 0) m_view = 1;
+        it = 0;
+        for(;it < m_view; it++) printf("#");
+        for(;it < n_view; it++) printf(" ");
+        printf("] %d / %d ( ", load[i], basket_size);
+        int f_space = 0;
+        for(it = 0; it < n; it++) if(p->baskets[it] == i){
+            if(f_space) printf(" ");
+            else f_space = 1;
+            printf("%d", p->items[it].volume);
+        }
+        printf(" )\n");
+        itb++;
+    }
 }
