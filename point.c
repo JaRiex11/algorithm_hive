@@ -201,6 +201,11 @@ point create_neighbour_point(point p_, int distance) {
             int found = 0;
             for (; it < m; it++) 
                 if(q->baskets[it] == b){
+                    found = it;
+                    break;
+                }
+            for (; it < m; it++) 
+                if(q->baskets[it] == b){
                     if(f > q->items[found].volume && q->items[it].volume > q->items[found].volume){
                         found = it;
                     }
