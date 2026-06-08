@@ -2,17 +2,16 @@
 #include<stdlib.h>
 #include<memory.h>
 
-int basket_size = 0;
-
 struct point_
 {
     const item* items;
     int* baskets;
     int baskets_size;
     int baskets_count;
+    int basket_size;
 };
 
-int validate(point p_) {
+int pnt_validate(point p_) {
     struct point_* p = p_;
     int* baskets_value;
     int max_value = -1;
@@ -23,16 +22,16 @@ int validate(point p_) {
         }
     }
 
-    baskets_value = malloc(max_value * sizeof(int)); // выделение памяти массиву
+    baskets_value = malloc((max_value + 1) * sizeof(int)); // выделение памяти массиву
 
-    memset(baskets_value, 0, max_value * sizeof(int)); // инициализация эл-ов массива нулями
+    memset(baskets_value, 0, (max_value + 1) * sizeof(int)); // инициализация эл-ов массива нулями
 
     for (int i = 0; i < p->baskets_size; i++) { // Считаем занятый объем каждой корзины
         baskets_value[p->baskets[i]] += p->items[i].volume;
     }
 
     for (int i = 0; i < max_value; i++) {
-        if (baskets_value[i] > basket_size) {
+        if (baskets_value[i] > p->basket_size) {
             free(baskets_value);
             return 0;
         }
@@ -42,7 +41,7 @@ int validate(point p_) {
     return 1;
 }
 
-int quality(point p_) {
+int pnt_quality(point p_) {
     struct point_* p = p_;
     int n = p->baskets_size;
     int max_b = -1;
@@ -58,7 +57,7 @@ int quality(point p_) {
         load[p->baskets[i]] += p->items[i].volume;
 
     for (int b = 0; b < bins; b++) {
-        if (load[b] > basket_size) {
+        if (load[b] > p->basket_size) {
             free(load);
             return INT_MAX;
         }
@@ -80,7 +79,7 @@ int quality(point p_) {
     int merged_count = 0;
     for (int i = 0; i < k - 1; i++) {
         for (int m = i + 1; m < k; m++) {
-            if (load[i] && load[m] && load[m] + load[i] <= basket_size) {
+            if (load[i] && load[m] && load[m] + load[i] <= p->basket_size) {
                 load[m] += load[i];
                 load[i] = 0;
             }
@@ -93,7 +92,7 @@ int quality(point p_) {
     return merged_count;
 }
 
-int quality_print(point p_) {
+int pnt_quality_print(point p_) {
     struct point_* p = p_;
     int n = p->baskets_size;
     int max_b = -1;
@@ -109,7 +108,7 @@ int quality_print(point p_) {
         load[p->baskets[i]] += p->items[i].volume;
 
     for (int b = 0; b < bins; b++) {
-        if (load[b] > basket_size) {
+        if (load[b] > p->basket_size) {
             free(load);
             return INT_MAX;
         }
@@ -137,7 +136,7 @@ int quality_print(point p_) {
     int merged_count = 0;
     for (int i = 0; i < k - 1; i++) {
         for (int m = i + 1; m < k; m++) {
-            if (load[i] && load[m] && load[m] + load[i] <= basket_size) {
+            if (load[i] && load[m] && load[m] + load[i] <= p->basket_size) {
                 load[m] += load[i];
                 load[i] = 0;
                 for (int j = 0; j < n; j++) if(p->baskets[j] == i) p->baskets[j] = m;
@@ -151,7 +150,7 @@ int quality_print(point p_) {
     return merged_count;
 }
 
-void correct_isomorph(point p_) {
+void pnt_correct_isomorph(point p_) {
     struct point_* p = p_;
     int* buffer;
     buffer = malloc(p->baskets_size * sizeof(int)); // выделение памяти массиву
@@ -170,9 +169,10 @@ void correct_isomorph(point p_) {
         }
         cnt++;
     }
+    free(buffer);
 }
 
-point create_point(item* items) {
+point create_point(item* items, int basket_size) {
     int n = 0;
     while (items[n].volume != -1)
         n++;
@@ -180,6 +180,7 @@ point create_point(item* items) {
     struct point_* p = malloc(sizeof(struct point_));
     p->items = items;
     p->baskets_size = n;
+    p->basket_size = basket_size;
     p->baskets = malloc(n * sizeof(int));
 
     int* load = calloc(n, sizeof(int));
@@ -198,16 +199,33 @@ point create_point(item* items) {
         load[p->baskets[i]] = p->items[i].volume;
 
     int it = 0;
-    for (int i = 1; i < n; i++){
-        if(load[it] + load[i] > basket_size)
+    for (int i = 1; i < n; i++) {
+        if (load[i] == 0)
+            continue;
+
+        if (load[it] + load[i] > p->basket_size) {
+            if (it >= n - 1)
+                break;
             it++;
-        if(it == i) continue;
+            i--;
+            continue;
+        }
+
+        if (it == i)
+            continue;
+
         load[it] += load[i];
         load[i] = 0;
-        for (int j = 0; j < n; j++) if(p->baskets[j] == i) p->baskets[j] = it;
+        for (int j = 0; j < n; j++)
+            if (p->baskets[j] == i)
+                p->baskets[j] = it;
     }
 
-    p->baskets_count = it + 1;
+    int max_basket = 0;
+    for (int j = 0; j < n; j++)
+        if (p->baskets[j] > max_basket)
+            max_basket = p->baskets[j];
+    p->baskets_count = max_basket + 1;
 
     free(load);
     return p;
@@ -226,6 +244,7 @@ point create_neighbour_point(point p_, int distance) {
     struct point_* q = malloc(sizeof(struct point_));
     q->items = p->items;
     q->baskets_size = n;
+    q->basket_size = p->basket_size;
     q->baskets_count = p->baskets_count;
     q->baskets = malloc(n * sizeof(int));
     memcpy(q->baskets, p->baskets, n * sizeof(int));
@@ -239,55 +258,87 @@ point create_neighbour_point(point p_, int distance) {
             continue;
         touched[i] = 1;
 
-        int b = rand() % (q->baskets_count + 1);
-        while (b == q->baskets[i]) 
-            b = rand() % (q->baskets_count + 1);
+        int basket_limit = q->baskets_count + 1;
+        if (basket_limit > n)
+            basket_limit = n;
+        if (basket_limit < 2)
+            basket_limit = 2;
+        int b = rand() % basket_limit;
+        while (b == q->baskets[i])
+            b = rand() % basket_limit;
         q->baskets[i] = b;
         done++;
     }
     free(touched);
 
     int* load = calloc(n, sizeof(int));
-    int m = q->baskets_count;
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++) {
+        if (q->baskets[i] < 0)
+            q->baskets[i] = 0;
+        if (q->baskets[i] >= n)
+            q->baskets[i] = n - 1;
         load[q->baskets[i]] += q->items[i].volume;
+    }
 
-    for (int b = 0; b < m; b++) {
-        if (load[b] > basket_size) {
-            int f = load[b] - basket_size;
-            int it = 0;
-            int found = 0;
-            for (; it < m; it++) 
-                if(q->baskets[it] == b){
+    int next_basket = q->baskets_count;
+    for (int j = 0; j < n; j++)
+        if (q->baskets[j] + 1 > next_basket)
+            next_basket = q->baskets[j] + 1;
+
+    for (int b = 0; b < n; b++) {
+        while (load[b] > q->basket_size) {
+            int f = load[b] - q->basket_size;
+            int found = -1;
+            for (int it = 0; it < n; it++) {
+                if (q->baskets[it] != b)
+                    continue;
+                if (found < 0) {
                     found = it;
-                    break;
+                    continue;
                 }
-            for (; it < m; it++) 
-                if(q->baskets[it] == b){
-                    if(f > q->items[found].volume && q->items[it].volume > q->items[found].volume){
-                        found = it;
-                    }
-                    if(f <= q->items[found].volume && q->items[it].volume < q->items[found].volume){
-                        found = it;
-                    }
-                }
+                if (f > q->items[found].volume && q->items[it].volume > q->items[found].volume)
+                    found = it;
+                if (f <= q->items[found].volume && q->items[it].volume < q->items[found].volume)
+                    found = it;
+            }
+            if (found < 0 || next_basket >= n)
+                break;
+
             load[b] -= q->items[found].volume;
-            load[m] += q->items[found].volume;
-            q->baskets[found] = m++;
+            load[next_basket] += q->items[found].volume;
+            q->baskets[found] = next_basket;
+            next_basket++;
         }
     }
 
     int it = 0;
-    for (int i = 1; i < m; i++){
-        if(load[it] + load[i] > basket_size)
+    for (int i = 1; i < n; i++) {
+        if (load[i] == 0)
+            continue;
+
+        if (load[it] + load[i] > q->basket_size) {
+            if (it >= n - 1)
+                break;
             it++;
-        if(it == i) continue;
+            i--;
+            continue;
+        }
+
+        if (it == i)
+            continue;
+
         load[it] += load[i];
         load[i] = 0;
-        for (int j = 0; j < n; j++) if(q->baskets[j] == i) q->baskets[j] = it;
+        for (int j = 0; j < n; j++)
+            if (q->baskets[j] == i)
+                q->baskets[j] = it;
     }
 
-    q->baskets_count = it + 1;
+    int max_basket = 0;
+    for (int j = 0; j < n; j++)
+        if (q->baskets[j] > max_basket)
+            max_basket = q->baskets[j];
+    q->baskets_count = max_basket + 1;
 
     free(load);
     
@@ -299,6 +350,8 @@ point copy_point(point p__) {
     struct point_* p = malloc(sizeof(struct point_));
     p->items = p_->items;
     p->baskets_size = p_->baskets_size;
+    p->basket_size = p_->basket_size;
+    p->baskets_count = p_->baskets_count ;
     p->baskets = malloc(p->baskets_size * sizeof(int));
     memcpy(p->baskets, p_->baskets, p->baskets_size * sizeof(int));
     return p;
@@ -306,7 +359,7 @@ point copy_point(point p__) {
 
 void print_point(point p_) {
     struct point_* p = p_;
-    correct_isomorph(p);
+    pnt_correct_isomorph(p);
 
     int n_view = 30;
     int n = p->baskets_size;
@@ -316,7 +369,7 @@ void print_point(point p_) {
         if (p->baskets[i] > max_b)
             max_b = p->baskets[i];
     if (max_b < 0)
-        return 0;
+        return;
     max_b++;
 
     int* load = calloc(max_b, sizeof(int));
@@ -325,7 +378,7 @@ void print_point(point p_) {
     for (int i = 0; i < n; i++)
         load[p->baskets[i]] += p->items[i].volume;
 
-    printf("quality: %d\n", quality_print(p));
+    printf("quality: %d\n", pnt_quality_print(p));
 
     for (int i = 0; i < max_b; i++)
         load[i] = 0;
@@ -336,12 +389,12 @@ void print_point(point p_) {
     for (int i = 0; i < max_b; i++){
         if(load[i] == 0) continue;
         printf("basket %3d [", itb);
-        int m_view = n_view * load[i] / basket_size;
+        int m_view = n_view * load[i] / p->basket_size;
         if(m_view == 0) m_view = 1;
         it = 0;
         for(;it < m_view; it++) printf("#");
         for(;it < n_view; it++) printf(" ");
-        printf("] %d / %d ( ", load[i], basket_size);
+        printf("] %d / %d ( ", load[i], p->basket_size);
         int f_space = 0;
         for(it = 0; it < n; it++) if(p->baskets[it] == i){
             if(f_space) printf(" ");
@@ -351,4 +404,6 @@ void print_point(point p_) {
         printf(" )\n");
         itb++;
     }
+
+    free(load);
 }
