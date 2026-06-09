@@ -4,7 +4,7 @@ typedef void* point;
 
 int pnt_validate(point p);
 
-int pnt_quality(point p);
+double pnt_quality(point p);
 
 void pnt_correct_isomorph(point p);
 

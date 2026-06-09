@@ -1,6 +1,7 @@
 #include "environment.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 struct environment_
 {
@@ -19,7 +20,10 @@ struct environment_
 };
 
 int compare_points(const void* a, const void* b) {
-    return pnt_quality(*(point*)a) - pnt_quality(*(point*)b);
+    double diff = pnt_quality(*(point*)a) - pnt_quality(*(point*)b);
+    if(diff < 2e-6 && diff > -2e-6) return 0;
+    if(diff < 0) return -1;
+    return 1;
 }
 
 point env_iteration(environment env_) {

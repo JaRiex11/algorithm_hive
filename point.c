@@ -41,7 +41,7 @@ int pnt_validate(point p_) {
     return 1;
 }
 
-int pnt_quality(point p_) {
+double pnt_quality(point p_) {
     struct point_* p = p_;
     int n = p->baskets_size;
     int max_b = -1;
@@ -86,10 +86,15 @@ int pnt_quality(point p_) {
         }
     }
 
-    for (int m = 0; m < k; m++) if(load[m]) merged_count++;
+    int sum = 0;
+
+    for (int m = 0; m < k; m++){ 
+        sum += load[m];
+        if(load[m]) merged_count++;
+    }
 
     free(load);
-    return merged_count;
+    return sum / p->basket_size * merged_count;
 }
 
 int pnt_quality_print(point p_) {
