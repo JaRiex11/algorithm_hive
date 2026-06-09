@@ -18,3 +18,12 @@ void env_set_honey_amount(environment env, int honey_amount);
 void env_set_distance(environment env, int distance);
 void env_set_iterations(environment env, int iterations);
 void env_load_file(environment env_, char* filename);
+void env_set_percent_range(environment env, double percent_range);
+void env_set_func(environment env, int func);
+
+int env_get_sniffer_amount(environment env);
+int env_get_honey_amount(environment env);
+int env_get_distance(environment env);
+int env_get_iterations(environment env);
+void env_print_loaded_item(environment env);
+void env_get_percent_range(environment env);

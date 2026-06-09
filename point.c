@@ -41,7 +41,7 @@ int pnt_validate(point p_) {
     return 1;
 }
 
-double pnt_quality(point p_) {
+/*double pnt_quality(point p_) {
     struct point_* p = p_;
     int n = p->baskets_size;
     int max_b = -1;
@@ -86,15 +86,66 @@ double pnt_quality(point p_) {
         }
     }
 
-    int sum = 0;
+    double sum = 0;
 
     for (int m = 0; m < k; m++){ 
-        sum += load[m];
-        if(load[m]) merged_count++;
+        if(!load[m]) continue;
+        merged_count++;
+        double x = (double)load[m] / p->basket_size;
+        //x = 1. / x;
+        sum += x * x * x;
     }
 
+    sum /= merged_count;
+
+    //printf("%d\n", merged_count);
+    //printf("%lf\n", sum);
+
     free(load);
-    return sum / p->basket_size * merged_count;
+    return merged_count + sum;
+}*/
+
+double pnt_quality(point p_) {
+    struct point_* p = p_;
+    int n = p->baskets_size;
+    int max_b = -1;
+    for (int i = 0; i < n; i++)
+        if (p->baskets[i] > max_b)
+            max_b = p->baskets[i];
+    if (max_b < 0)
+        return 0;
+
+    int bins = max_b + 1;
+    int* load = calloc(bins, sizeof(int));
+    for (int i = 0; i < n; i++)
+        load[p->baskets[i]] += p->items[i].volume;
+
+    for (int b = 0; b < bins; b++) {
+        if (load[b] > p->basket_size) {
+            free(load);
+            return INT_MAX;
+        }
+    }
+
+    int merged_count = 0;
+
+    double sum = 0;
+
+    for (int m = 0; m < bins; m++){ 
+        if(!load[m]) continue;
+        merged_count++;
+        double x = (double)load[m] / p->basket_size;
+        //x = 1. / x;
+        sum += x * x * x;
+    }
+
+    sum /= merged_count;
+
+    //printf("%d\n", merged_count);
+    //printf("%lf\n", sum);
+
+    free(load);
+    return merged_count + sum;
 }
 
 int pnt_quality_print(point p_) {
@@ -243,8 +294,12 @@ void destroy_point(point p_) {
 }
 
 point create_neighbour_point(point p_, int distance) {
+    if (!p_)
+        return NULL;
     struct point_* p = p_;
     int n = p->baskets_size;
+    if (n <= 0)
+        return NULL;
 
     struct point_* q = malloc(sizeof(struct point_));
     q->items = p->items;
@@ -255,7 +310,12 @@ point create_neighbour_point(point p_, int distance) {
     memcpy(q->baskets, p->baskets, n * sizeof(int));
 
     int* touched = calloc(n, sizeof(int));
-    
+
+    if (distance > n)
+        distance = n;
+    if (distance < 0)
+        distance = 0;
+
     int done = 0;
     while (done < distance) {
         int i = rand() % n;
@@ -263,7 +323,7 @@ point create_neighbour_point(point p_, int distance) {
             continue;
         touched[i] = 1;
 
-        int basket_limit = q->baskets_count + 1;
+        int basket_limit = q->baskets_count;
         if (basket_limit > n)
             basket_limit = n;
         if (basket_limit < 2)
@@ -278,10 +338,6 @@ point create_neighbour_point(point p_, int distance) {
 
     int* load = calloc(n, sizeof(int));
     for (int i = 0; i < n; i++) {
-        if (q->baskets[i] < 0)
-            q->baskets[i] = 0;
-        if (q->baskets[i] >= n)
-            q->baskets[i] = n - 1;
         load[q->baskets[i]] += q->items[i].volume;
     }
 
@@ -309,10 +365,15 @@ point create_neighbour_point(point p_, int distance) {
             if (found < 0 || next_basket >= n)
                 break;
 
-            load[b] -= q->items[found].volume;
-            load[next_basket] += q->items[found].volume;
-            q->baskets[found] = next_basket;
-            next_basket++;
+            int buf = q->items[found].volume;
+            load[b] -= buf;
+            int found_b = 0;
+            for(; found_b < next_basket; found_b++){
+                if(load[found_b] + buf <= q->basket_size) break;
+            }
+            load[found_b] += q->items[found].volume;
+            q->baskets[found] = found_b;
+            if(found_b == next_basket) next_basket++;
         }
     }
 

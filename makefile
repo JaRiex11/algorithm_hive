@@ -8,7 +8,7 @@ DEPS := $(addprefix obj, $(SRC_NAME:.cpp=.d))
 DEPS := $(DEPS:.c=.d)
 INCLUDE := 
 LIB := 
-FLAGS := -g -fpermissive -Wextra -MMD -MP -w -DUNICODE -std=c++20 -static-libgcc -static-libstdc++ #-fcompare-debug-second -Wl,--subsystem,windows
+FLAGS := -g -fopenmp -fpermissive -Wextra -MMD -MP -w -DUNICODE -std=c++20 -static-libgcc -static-libstdc++ #-fcompare-debug-second -Wl,--subsystem,windows
 ARGS := $(FLAGS)
 TARGET := auto
 .PHONY: all clear clear_all
