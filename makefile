@@ -6,8 +6,8 @@ OBJS  := $(OBJS:.c=.co)
 
 DEPS := $(addprefix obj, $(SRC_NAME:.cpp=.d)) 
 DEPS := $(DEPS:.c=.d)
-INCLUDE := 
-LIB := 
+INCLUDE := -Iinclude
+LIB := -Llib -lfreeglut -lopengl32 -lgdi32 -lwinmm
 FLAGS := -g -fopenmp -fpermissive -Wextra -MMD -MP -w -DUNICODE -std=c++20 -static-libgcc -static-libstdc++ #-fcompare-debug-second -Wl,--subsystem,windows
 ARGS := $(FLAGS)
 TARGET := auto
