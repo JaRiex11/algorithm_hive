@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "rng.h"
 
 int rnd_linear(int n) {
     if (n <= 1) return 0;
     int total = n * (n + 1) / 2;
-    int r = rand() % total;
+    int r = rng_range(&rng_global, total);
     int cum = 0;
     for (int i = 0; i < n; i++) {
         cum += n - i;
@@ -17,7 +18,7 @@ int rnd_linear(int n) {
 
 #define LOFFSET log(RAND_MAX)
 static double getLrand(double l) {
-    return (log(rand() + 1) - LOFFSET) / (-l);
+    return (log(rng_uniform01(&rng_global) + 1) - LOFFSET) / (-l);
 }
 
 int rnd_exp(int n) {
@@ -30,7 +31,7 @@ int rnd_exp(int n) {
 
 int rnd_uniform(int n) {
     if (n <= 0) return 0;
-    return rand() % n;
+    return rng_range(&rng_global, n);
 }
 
 int rnd_square(int n) {
@@ -40,7 +41,7 @@ int rnd_square(int n) {
         int w = n - i;
         total += w * w;
     }
-    int r = rand() % total;
+    int r = rng_range(&rng_global, total);
     int cum = 0;
     for (int i = 0; i < n; i++) {
         int w = n - i;
@@ -81,8 +82,6 @@ int compare_points(const void* a, const void* b) {
     return 1;
 }
 
-#include <omp.h>
-
 point env_iteration(environment env_) {
     struct environment_* env = env_;
     env_sniffer_distribution(env);
@@ -95,12 +94,16 @@ point env_iteration(environment env_) {
     env->percent_range = tmp;
     ranging_solutions(env);
         
-    printf("\n--------------------------------------------------\n");
+    printf("\n");
 
     int crat = env->iterations / 50;
     if(crat == 0) crat = 1;
 
     int it = 0;
+    while(it++ < env->iterations)
+        if(it % crat == 0) printf("-");
+    printf("\n");
+    it = 0;
     while(it++ < env->iterations){
         if(it % crat == 0) printf("#");
         //printf("iteration no %d\n", it);
@@ -123,14 +126,15 @@ point env_iteration(environment env_) {
 ga 292
 */
 
+#include <omp.h>
+
 void env_honey_distribution(environment env_) {
     struct environment_* env = env_;
     int count = (env->sniffer_amount + env->honey_amount) * env->percent_range;
     if(count < 1) count = 1;
-#pragma omp parallel for
+    point* buffer = calloc(env->honey_amount, sizeof(point));
+    #pragma omp parallel for
     for (int i = 0; i < env->honey_amount; i++) {
-        if (env->honyes[i])
-            destroy_point(env->honyes[i]);
         int parent_idx = env->function_honey_distribution(count);
         if (parent_idx < 0)
             parent_idx = 0;
@@ -141,13 +145,20 @@ void env_honey_distribution(environment env_) {
             parent = env->sniffers[0];
         if (!parent)
             continue;
-        env->honyes[i] = create_neighbour_point(parent, env->distance);
+        buffer[i] = create_neighbour_point(parent, env->distance);
     }
+
+    for(int i = 0; i < env->honey_amount;i++){
+        if (env->honyes[i])
+            destroy_point(env->honyes[i]);
+        env->honyes[i] = buffer[i];
+    }
+    free(buffer);
 }
 
 void env_sniffer_distribution(environment env_) {
     struct environment_* env = env_;
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < env->sniffer_amount; i++) {
         if (env->sniffers[i])
             destroy_point(env->sniffers[i]);

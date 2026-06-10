@@ -7,6 +7,7 @@
 #include <time.h>
 #include <math.h>
 #include "ui.h"
+#include "easy_plot_c.h"
 
 void** cmd_map;
 char** cmd_help;
@@ -268,9 +269,12 @@ type_distribution   %s\n", view.bee_honey_count,
 	view.type_distribution);
 }
 void print_test() {
-	printf("Run test\n\
-Setting parameter test\n\
+	printf("Setting parameter test\n\
 Select the parameter number and write a command like this: \"1 = 1 10 1\", pattern: \"number = start end step\"\n\
+1. bee_honey_count:      amount of honey bees\n\
+2. bee_sniffer_count:    amount of sniffer (scout) bees\n\
+3. distance:             distance between neighbour points\n\
+4. iteration:            amount of iterations\n\
 write \"exit\" for exit\n");
 	while(1){
 		printf("  >> ");
@@ -303,52 +307,76 @@ write \"exit\" for exit\n");
 		int step = read_int(view.line + it);
 		if(step == 0) return;
 
+		int testn = 0;
+		for(int i = start; i <= end; i += step) testn++;
+		double *x = calloc(testn, sizeof(double));
+		double *y = calloc(testn, sizeof(double));
+		int test_it = 0;
+		char* title = "";
+
+
 		switch (cmd)
 		{
+			case 'e':
+				return;
 			case 'h':
 			printf("Setting parameter test\n\
-Select the parameter number and write a command like this: \"1 = 1 10 1\", pattern: \"number = start end step\"\n");
+Select the parameter number and write a command like this: \"1 = 1 10 1\", pattern: \"number = start end step\"\n\
+1. bee_honey_count:      amount of honey bees\n\
+2. bee_sniffer_count:    amount of sniffer (scout) bees\n\
+3. distance:             distance between neighbour points\n\
+4. iteration:            amount of iterations\n\
+write \"exit\" for exit\n");
 			break;
 		case '1':
 			for(int i = start; i <= end; i += step){
 				env_set_honey_amount(view.env, i);
-				point result = env_iteration(view.env);;
+				point result = env_iteration(view.env);
+				x[test_it] = i;
+				y[test_it++] = pnt_quality(result);
 				pnt_quality_print(result);
-				destroy_point(result);
 			}
 			env_set_honey_amount(view.env, view.bee_honey_count);
+			title = "honey_amount";
 			break;
 		case '2':
 			for(int i = start; i <= end; i += step){
 				env_set_sniffer_amount(view.env, i);
-				point result = env_iteration(view.env);;
+				point result = env_iteration(view.env);
+				x[test_it] = i;
+				y[test_it++] = pnt_quality(result);
 				pnt_quality_print(result);
-				destroy_point(result);
 			}
 			env_set_sniffer_amount(view.env, view.bee_sniffer_count);
+			title = "sniffer_amount";
 			break;
 		case '3':
 			for(int i = start; i <= end; i += step){
 				env_set_distance(view.env, i);
 				point result = env_iteration(view.env);;
+				x[test_it] = i;
+				y[test_it++] = pnt_quality(result);
 				pnt_quality_print(result);
-				destroy_point(result);
 			}
 			env_set_distance(view.env, view.distance);
+			title = "distance";
 			break;
 		case '4':
 			for(int i = start; i <= end; i += step){
 				env_set_iterations(view.env, i);
 				point result = env_iteration(view.env);;
+				x[test_it] = i;
+				y[test_it++] = pnt_quality(result);
 				pnt_quality_print(result);
-				destroy_point(result);
 			}
 			env_set_iterations(view.env, view.iteration);
+			title = "iterations";
 			break;
 		
 		default:
 			break;
 		}
+		easy_plot_xy("test", x, y, testn, title, "quality");
 	}
 }
 
@@ -395,7 +423,7 @@ void run_ui() {
 	cmd_help['i'] = "print environment's parametrs";
 	cmd_map['r'] = print_run;
 	cmd_help['r'] = "run environment";
-	cmd_map['g'] = print_help;
+	cmd_map['g'] = print_test;
 	cmd_help['g'] = "run test for grafics";
 
 	print_general();

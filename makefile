@@ -8,7 +8,7 @@ DEPS := $(addprefix obj, $(SRC_NAME:.cpp=.d))
 DEPS := $(DEPS:.c=.d)
 INCLUDE := -Iinclude
 LIB := -L./lib -lfreeglut -lopengl32 -lgdi32 -lwinmm
-CFLAGS_COMMON := -O2 -fpermissive -Wextra -MMD -MP -w -DFREEGLUT_STATIC -fopenmp -static-libgcc -static-libstdc++
+CFLAGS_COMMON := -O3 -fpermissive -Wextra -MMD -MP -w -DFREEGLUT_STATIC -fopenmp -static-libgcc -static-libstdc++
 CFLAGS_C := $(CFLAGS_COMMON) -std=c11
 CFLAGS_CXX := $(CFLAGS_COMMON) -std=c++17
 TARGET := auto

@@ -5,8 +5,9 @@
 #include <thread>
 
 #include "easy_plot.hpp"
+#include "easy_plot_c.h"
 
-
+extern "C" {
 
 void easy_plot_init(int *argc, char **argv) {
     easy_plot::EasyPlot::init(argc, argv);
@@ -36,4 +37,6 @@ int easy_plot_xy(const char *name, const double *x, const double *y, int n,
 
 void easy_plot_wait(void) {
     easy_plot::EasyPlot::wait_until_all_windows_closed();
+}
+
 }

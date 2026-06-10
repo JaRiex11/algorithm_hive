@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<limits.h>
 #include<memory.h>
+#include "rng.h"
 
 struct point_
 {
@@ -246,7 +247,7 @@ point create_point(item* items, int basket_size) {
         p->baskets[i] = i;
 
     for (int i = 1; i < n; i++){
-        int j = rand() % (i + 1);
+        int j = rng_range(&rng_global, (i + 1));
         int tmp = p->baskets[i];
         p->baskets[i] = p->baskets[j];
         p->baskets[j] = tmp;
@@ -289,6 +290,8 @@ point create_point(item* items, int basket_size) {
 }
 
 void destroy_point(point p_) {
+    if (!p_)
+        return;
     struct point_* p = p_;
     free(p->baskets);
     free(p);
@@ -319,7 +322,7 @@ point create_neighbour_point(point p_, int distance) {
 
     int done = 0;
     while (done < distance) {
-        int i = rand() % n;
+        int i = rng_range(&rng_global, n);
         if (touched[i])
             continue;
         touched[i] = 1;
@@ -329,9 +332,9 @@ point create_neighbour_point(point p_, int distance) {
             basket_limit = n;
         if (basket_limit < 2)
             basket_limit = 2;
-        int b = rand() % basket_limit;
+        int b = rng_range(&rng_global, basket_limit);
         while (b == q->baskets[i])
-            b = rand() % basket_limit;
+            b = rng_range(&rng_global, basket_limit);
         q->baskets[i] = b;
         done++;
     }
@@ -339,7 +342,8 @@ point create_neighbour_point(point p_, int distance) {
 
     int* load = calloc(n, sizeof(int));
     for (int i = 0; i < n; i++) {
-        load[q->baskets[i]] += q->items[i].volume;
+        if(q->baskets[i] >= 0 && q->baskets[i] <= n)
+            load[q->baskets[i]] += q->items[i].volume;
     }
 
     int next_basket = q->baskets_count;
@@ -375,6 +379,7 @@ point create_neighbour_point(point p_, int distance) {
             load[found_b] += q->items[found].volume;
             q->baskets[found] = found_b;
             if(found_b == next_basket) next_basket++;
+            if(next_basket == n) break;
         }
     }
 
