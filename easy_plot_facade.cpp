@@ -1,6 +1,12 @@
-#include "easy_plot_c.h"
-#include "easy_plot.hpp"
+#define _GLIBCXX_USE_WCHAR_T 0
+
 #include <vector>
+#include <string>
+#include <thread>
+
+#include "easy_plot.hpp"
+
+
 
 void easy_plot_init(int *argc, char **argv) {
     easy_plot::EasyPlot::init(argc, argv);

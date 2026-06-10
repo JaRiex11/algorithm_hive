@@ -7,9 +7,10 @@ OBJS  := $(OBJS:.c=.co)
 DEPS := $(addprefix obj, $(SRC_NAME:.cpp=.d)) 
 DEPS := $(DEPS:.c=.d)
 INCLUDE := -Iinclude
-LIB := -Llib -lfreeglut -lopengl32 -lgdi32 -lwinmm
-FLAGS := -g -fopenmp -fpermissive -Wextra -MMD -MP -w -DUNICODE -std=c++20 -static-libgcc -static-libstdc++ #-fcompare-debug-second -Wl,--subsystem,windows
-ARGS := $(FLAGS)
+LIB := -L./lib -lfreeglut -lopengl32 -lgdi32 -lwinmm
+CFLAGS_COMMON := -O2 -fpermissive -Wextra -MMD -MP -w -DFREEGLUT_STATIC -fopenmp -static-libgcc -static-libstdc++
+CFLAGS_C := $(CFLAGS_COMMON) -std=c11
+CFLAGS_CXX := $(CFLAGS_COMMON) -std=c++17
 TARGET := auto
 .PHONY: all clear clear_all
 
@@ -19,15 +20,15 @@ rebuild: clear all
 
 build/$(TARGET).exe:  $(OBJS)
 	@mkdir -p build
-	g++ $(ARGS) $(OBJS) -o build/$(TARGET).exe $(LIB)
+	g++ $(CFLAGS_CXX) $(OBJS) -o build/$(TARGET).exe $(LIB)
 
 obj/%.co: %.c
 	@mkdir -p $(dir $@)
-	gcc $(ARGS) $(INCLUDE) -c $< -o $@
+	gcc $(CFLAGS_C) $(INCLUDE) -c $< -o $@
 
 obj/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	g++ $(ARGS) $(INCLUDE) -c $< -o $@
+	g++ $(CFLAGS_CXX) $(INCLUDE) -c $< -o $@
 
 -include $(DEPS)
 

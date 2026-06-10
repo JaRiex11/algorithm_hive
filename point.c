@@ -1,5 +1,6 @@
 #include "point.h"
 #include<stdlib.h>
+#include<limits.h>
 #include<memory.h>
 
 struct point_

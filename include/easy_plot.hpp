@@ -1,6 +1,10 @@
 #ifndef EASY_PLOT_HPP_INCLUDED
 #define EASY_PLOT_HPP_INCLUDED
 
+#define _GLIBCXX_USE_WCHAR_T 0
+
+#include <cstdio>
+
 #include "main/easy_plot_common.hpp"
 #include "main/easy_plot_line_spec.hpp"
 #include "main/easy_plot_window_spec.hpp"
@@ -56,10 +60,10 @@ namespace easy_plot {
                         drawings_future.get();
                     }
                     catch(const std::exception &e) {
-                        std::cerr << "Error: ~DrawingThread(), what: " << e.what() << std::endl;
+                        std::fprintf(stderr, "Error: ~DrawingThread(), what: %s\n", e.what());
                     }
                     catch(...) {
-                        std::cerr << "Error: ~DrawingThread()" << std::endl;
+                        std::fprintf(stderr, "Error: ~DrawingThread()\n");
                     }
                 }
             };
