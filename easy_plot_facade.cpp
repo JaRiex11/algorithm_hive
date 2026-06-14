@@ -30,8 +30,12 @@ int easy_plot_xy(const char *name, const double *x, const double *y, int n,
     ws.x_label = x_label ? x_label : "X";
     ws.y_label = y_label ? y_label : "Y";
     ws.show_legend = false;
+    ws.show_axis_ticks = true;
+    ws.axis_tick_count = 6;
+    ws.indent = 0.18;
 
     easy_plot::LineSpec ls(0.0, 0.0, 1.0);
+    ls.width = 10.f;
     return easy_plot::EasyPlot::plot(name, ws, xv, yv, ls);
 }
 

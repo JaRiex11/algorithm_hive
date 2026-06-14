@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <mutex>
+#include <vector>
 
 namespace easy_plot {
     namespace tools {
@@ -155,6 +156,37 @@ namespace easy_plot {
                 return std::string(buf);
             }
 
+            static std::vector<double> compute_axis_ticks(double vmin, double vmax, int target_count) {
+                std::vector<double> ticks;
+                if (vmax < vmin)
+                    std::swap(vmin, vmax);
+                if (std::fabs(vmax - vmin) < 1e-12) {
+                    ticks.push_back(vmin);
+                    return ticks;
+                }
+                const int slots = std::max(2, target_count);
+                const double raw_step = (vmax - vmin) / (double)(slots - 1);
+                const double mag = std::pow(10.0, std::floor(std::log10(raw_step)));
+                const double residual = raw_step / mag;
+                double nice = 10.0;
+                if (residual <= 1.0) nice = 1.0;
+                else if (residual <= 2.0) nice = 2.0;
+                else if (residual <= 5.0) nice = 5.0;
+                const double step = nice * mag;
+                double t = std::ceil(vmin / step - 1e-12) * step;
+                for (int guard = 0; guard < 64 && t <= vmax + step * 1e-6; ++guard, t += step)
+                    ticks.push_back(t);
+                if (ticks.empty()) {
+                    ticks.push_back(vmin);
+                    ticks.push_back(vmax);
+                }
+                return ticks;
+            }
+
+            bool should_draw_tick_label(double pos, double last_pos, double min_gap) const {
+                return last_pos < -1.5 || std::fabs(pos - last_pos) >= min_gap;
+            }
+
             double text_width_norm(const std::string& text) const {
                 if (width <= 0 || text.empty()) return 0.0;
                 return convert_pixel_to_relative_len(
@@ -174,29 +206,56 @@ namespace easy_plot {
                 glColor3f(window_style.tr, window_style.tg, window_style.tb);
 
                 if (window_style.show_axis_ticks) {
-                    const std::string sx_min = format_axis_value(min_x);
-                    const std::string sx_max = format_axis_value(max_x);
-                    const std::string sy_min = format_axis_value(min_y);
-                    const std::string sy_max = format_axis_value(max_y);
+                    const std::vector<double> x_ticks = compute_axis_ticks(
+                        min_x, max_x, window_style.axis_tick_count);
+                    const std::vector<double> y_ticks = compute_axis_ticks(
+                        min_y, max_y, window_style.axis_tick_count);
+                    const double tick_len = std::max(0.012, th * 0.35);
+                    const double x_label_y = -1.0 - th - gap;
+                    const double y_label_x_base = -1.0 - gap * 2.0;
+                    const double min_x_gap = th * 1.2;
+                    const double min_y_gap = th * 1.15;
 
-                    const double x_left = get_x(min_x);
-                    const double x_right = get_x(max_x);
-                    const double y_bottom = get_y(min_y);
-                    const double y_top = get_y(max_y);
+                    glBegin(GL_LINES);
+                    glColor3f(window_style.fr, window_style.fg, window_style.fb);
+                    for (double tx : x_ticks) {
+                        const double px = get_x(tx);
+                        glVertex2f(px, -1.0);
+                        glVertex2f(px, -1.0 - tick_len);
+                    }
+                    for (double ty : y_ticks) {
+                        const double py = get_y(ty);
+                        glVertex2f(-1.0, py);
+                        glVertex2f(-1.0 - tick_len, py);
+                    }
+                    glEnd();
 
-                    render_spaced_bitmap_string(
-                        x_left - text_width_norm(sx_min) * 0.5, -1.0 - th - gap, 0.0,
-                        window_style.font, sx_min);
-                    render_spaced_bitmap_string(
-                        x_right - text_width_norm(sx_max) * 0.5, -1.0 - th - gap, 0.0,
-                        window_style.font, sx_max);
+                    glColor3f(window_style.tr, window_style.tg, window_style.tb);
+                    double last_x_center = -2.0;
+                    for (double tx : x_ticks) {
+                        const std::string label = format_axis_value(tx);
+                        const double px = get_x(tx);
+                        const double lw = text_width_norm(label);
+                        if (!should_draw_tick_label(px, last_x_center, min_x_gap))
+                            continue;
+                        render_spaced_bitmap_string(
+                            px - lw * 0.5, x_label_y, 0.0,
+                            window_style.font, label);
+                        last_x_center = px;
+                    }
 
-                    render_spaced_bitmap_string(
-                        -1.0 - text_width_norm(sy_min) - gap * 2, y_bottom - th * 0.4, 0.0,
-                        window_style.font, sy_min);
-                    render_spaced_bitmap_string(
-                        -1.0 - text_width_norm(sy_max) - gap * 2, y_top - th * 0.4, 0.0,
-                        window_style.font, sy_max);
+                    double last_y_center = -2.0;
+                    for (double ty : y_ticks) {
+                        const std::string label = format_axis_value(ty);
+                        const double py = get_y(ty);
+                        const double lw = text_width_norm(label);
+                        if (!should_draw_tick_label(py, last_y_center, min_y_gap))
+                            continue;
+                        render_spaced_bitmap_string(
+                            y_label_x_base - lw, py - th * 0.4, 0.0,
+                            window_style.font, label);
+                        last_y_center = py;
+                    }
                 }
 
                 if (!window_style.x_label.empty()) {
@@ -611,6 +670,7 @@ namespace easy_plot {
                     glBegin(GL_LINES);
                     // рисуем график
                     for(size_t nl = 0; nl < line_style.size(); ++nl) {
+                        glLineWidth(line_style[nl].width > 0.0f ? line_style[nl].width : 1.0f);
                         glColor3f(line_style[nl].r, line_style[nl].g, line_style[nl].b);
                         if (raw_data_y[nl].size() < 2)
                             continue;
@@ -644,6 +704,7 @@ namespace easy_plot {
                         }
                     }
                     glEnd();
+                    glLineWidth(1.0f);
                 } else {
                     // рисуем изображение
                     glBegin(GL_QUADS);

@@ -58,7 +58,8 @@ namespace easy_plot {
         std::string chart_title;    /**< Заголовок на поле графика */
         std::string chart_subtitle; /**< Подзаголовок (условия эксперимента) */
         bool show_legend = true;    /**< Рисовать легенду серий */
-        bool show_axis_ticks = true; /**< Подписи min/max на осях */
+        bool show_axis_ticks = true; /**< Подписи значений на делениях осей */
+        int axis_tick_count = 6;     /**< Желаемое число делений на каждой оси */
 
         /** \brief Инициализация параметров Окна по умолчанию
          */

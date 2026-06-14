@@ -403,6 +403,108 @@ void access_cmd() {
 	}
 }
 
+void ptest(){
+	int testn = 100;
+	double *x = calloc(testn, sizeof(double));
+	double *y = calloc(testn, sizeof(double));
+	int test_it = 0;
+	char* title;
+
+	/*printf("test 1\n");
+	test_it = 0;
+	for(int i = 5; i <= 500; i += 5){
+		printf("test 1 %d / 100\n", i / 5);
+		env_set_distance(view.env, i);
+		point result = env_iteration(view.env);;
+		x[test_it] = i;
+		y[test_it++] = pnt_quality(result);
+		pnt_quality_print(result);
+	}
+	env_set_distance(view.env, view.distance);
+	title = "distance";
+	easy_plot_xy("test", x, y, testn, title, "quality");*/
+
+	printf("test 4\n");
+	test_it = 0;
+	{
+		env_set_func(view.env, 1);
+		for(int i = 0; i < 5; i++){
+			point result = env_iteration(view.env);;
+			y[test_it] += pnt_quality(result);
+		}
+		y[test_it] /= 5.;
+		x[test_it] = 1;
+		test_it++;
+	}
+	{
+		env_set_func(view.env, 2);
+		for(int i = 0; i < 5; i++){
+			point result = env_iteration(view.env);;
+			y[test_it] += pnt_quality(result);
+		}
+		y[test_it] /= 5.;
+		x[test_it] = 2;
+		test_it++;
+	}
+	{
+		env_set_func(view.env, 3);
+		for(int i = 0; i < 5; i++){
+			point result = env_iteration(view.env);;
+			y[test_it] += pnt_quality(result);
+		}
+		y[test_it] /= 5.;
+		x[test_it] = 3;
+		test_it++;
+	}
+	{
+		env_set_func(view.env, 4);
+		for(int i = 0; i < 5; i++){
+			point result = env_iteration(view.env);;
+			y[test_it] += pnt_quality(result);
+		}
+		y[test_it] /= 5.;
+		x[test_it] = 4;
+		test_it++;
+	}
+	title = "func";
+	easy_plot_xy("test", x, y, test_it, title, "quality");
+
+	test_it = 0;
+	for(int i = 2; i <= 90; i += 2){
+		printf("test 2 %d / 100\n", i);
+		env_set_honey_amount(view.env, i * 3);
+		int bufi = 300 - i * 3;
+		env_set_sniffer_amount(view.env, bufi);
+		point result = env_iteration(view.env);;
+		x[test_it] = i;
+		y[test_it++] = pnt_quality(result);
+		pnt_quality_print(result);
+	}
+	env_set_honey_amount(view.env, view.bee_honey_count);
+	env_set_sniffer_amount(view.env, view.bee_sniffer_count);
+	title = "ratio";
+	easy_plot_xy("test", x, y, test_it, title, "quality");
+
+
+	test_it = 0;
+	for(int i = 2; i <= 100; i += 2){
+		printf("test 3 %d / 100\n", i);
+		env_set_honey_amount(view.env, i * 2);
+		env_set_sniffer_amount(view.env, i);
+		point result = env_iteration(view.env);;
+		x[test_it] = i;
+		y[test_it++] = pnt_quality(result);
+		pnt_quality_print(result);
+	}
+	env_set_honey_amount(view.env, view.bee_honey_count);
+	env_set_sniffer_amount(view.env, view.bee_sniffer_count);
+	title = "size_bee";
+	easy_plot_xy("test", x, y, test_it, title, "quality");
+
+	
+	
+}
+
 void run_ui() {
 	view.bee_honey_count = 200;
 	view.bee_sniffer_count = 50;
@@ -425,6 +527,8 @@ void run_ui() {
 	cmd_help['r'] = "run environment";
 	cmd_map['g'] = print_test;
 	cmd_help['g'] = "run test for grafics";
+	cmd_map['f'] = ptest;
+	//cmd_help['f'] = "program test";
 
 	print_general();
 }
@@ -433,7 +537,7 @@ void print_general() {
 	printf("Commands:\n");
 
 	for (int i = 0; i < 128; i++) {
-		if (!cmd_map[i]) continue;
+		if (!cmd_help[i]) continue;
 
 		printf("  >  %c: ", i);
 		if (cmd_help[i]) printf("%s", cmd_help[i]);

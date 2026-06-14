@@ -86,10 +86,11 @@ point env_iteration(environment env_) {
     struct environment_* env = env_;
     env_sniffer_distribution(env);
     qsort(env->sniffers_and_honyes, env->sniffer_amount, sizeof(point), compare_points);
-    if(env->best_point == 0) env->best_point = copy_point(*env->sniffers);
+    if(env->best_point)  destroy_point(env->best_point);
+    env->best_point = copy_point(*env->sniffers);
 
     double tmp = env->percent_range;
-    env->percent_range = 0;
+    env->percent_range = 1;
     env_honey_distribution(env);
     env->percent_range = tmp;
     ranging_solutions(env);
@@ -119,6 +120,8 @@ point env_iteration(environment env_) {
         }
     }
     printf("\n");
+
+    for(int i = 0; i < env->honey_amount + env->sniffer_amount; i++){destroy_point(env->sniffers_and_honyes[i]); env->sniffers_and_honyes[i] = 0;}
     return env->best_point;
 }
 
